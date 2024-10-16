@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model API Interface</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2 class="mb-4 text-center">AI Model Interface</h2>
+
+        <div class="card mb-4">
+            <div class="card-header">Train Model</div>
+            <div class="card-body">
+                <form id="trainForm">
+                    <div class="form-group">
+                        <label for="trainFile">Upload CSV for Training:</label>
+                        <input type="file" class="form-control-file" id="trainFile" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Train Model</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">Predict from CSV File</div>
+            <div class="card-body">
+                <form id="predictFileForm">
+                    <div class="form-group">
+                        <label for="predictFile">Upload CSV for Prediction:</label>
+                        <input type="file" class="form-control-file" id="predictFile" required>
+                    </div>
+                    <button type="submit" class="btn btn-success">Predict File</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">Predict Single Text</div>
+            <div class="card-body">
+                <form id="predictTextForm">
+                    <div class="form-group">
+                        <label for="predictText">Enter Text:</label>
+                        <input type="text" class="form-control" id="predictText" required>
+                    </div>
+                    <button type="submit" class="btn btn-info">Predict Text</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="resultMessage" class="alert mt-4" style="display: none;"></div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Train model form
+            $('#trainForm').submit(function(e) {
+                e.preventDefault();
+                var formData = new FormData();
+                formData.append('file', $('#trainFile')[0].files[0]);
+                $.ajax({
+                    url: 'http://localhost:5000/train',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        $('#resultMessage').text(response.message).removeClass().addClass('alert alert-success').show();
+                    },
+                    error: function(xhr) {
+                        $('#resultMessage').text(xhr.responseJSON.error).removeClass().addClass('alert alert-danger').show();
+                    }
+                });
+            });
+
+            // Predict from CSV form
+            $('#predictFileForm').submit(function(e) {
+                e.preventDefault();
+                var formData = new FormData();
+                formData.append('file', $('#predictFile')[0].files[0]);
+                $.ajax({
+                    url: 'http://localhost:5000/predictfile',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        $('#resultMessage').html(`Predictions saved: <a href="http://localhost:5000/results/${response.result_file.split('/').pop()}" target="_blank">Download Results</a>`).removeClass().addClass('alert alert-success').show();
+                    },
+                    error: function(xhr) {
+                        $('#resultMessage').text(xhr.responseJSON.error).removeClass().addClass('alert alert-danger').show();
+                    }
+                });
+            });
+
+            // Predict single text form
+            $('#predictTextForm').submit(function(e) {
+                e.preventDefault();
+                var text = $('#predictText').val();
+                $.ajax({
+                    url: 'http://localhost:5000/predict',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ text: text }),
+                    success: function(response) {
+                        $('#resultMessage').text(`Prediction: ${response.prediction}`).removeClass().addClass('alert alert-info').show();
+                    },
+                    error: function(xhr) {
+                        $('#resultMessage').text(xhr.responseJSON.error).removeClass().addClass('alert alert-danger').show();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
